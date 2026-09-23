@@ -52,6 +52,7 @@ services:
 
   # ============================================================================
   # Bandwidth Sharing Daemon 3: ProxyRack Peer [ACTIVE - DATACENTER FRIENDLY]
+  # Requires unique 64-char hex UUID and API Key
   # ============================================================================
   proxyrack:
     image: proxyrack/pop:latest
@@ -62,7 +63,9 @@ services:
       - 8.8.8.8
       - 9.9.9.9
     environment:
+      - UUID=${PROXYRACK_UUID}
       - API_KEY=${PROXYRACK_API_KEY}
+      - DEVICE_NAME=${PROXYRACK_DEVICE_NAME:-contabo-vps}
     deploy:
       resources:
         limits:

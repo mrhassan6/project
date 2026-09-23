@@ -349,6 +349,14 @@ while IFS= read -r line || [[ -n "$line" ]]; do
     fi
 done < .env
 
+# Ensure ProxyRack has a 64-char UUID if API key is provided
+if [[ -z "${PROXYRACK_UUID:-}" && -n "${PROXYRACK_API_KEY:-}" ]]; then
+    PROXYRACK_UUID=$(cat /dev/urandom | LC_ALL=C tr -dc 'A-F0-9' | dd bs=1 count=64 2>/dev/null || openssl rand -hex 32 | tr 'a-z' 'A-Z')
+    echo "PROXYRACK_UUID=${PROXYRACK_UUID}" >> .env
+    export PROXYRACK_UUID
+    log_info "Generated unique 64-character UUID for ProxyRack Peer."
+fi
+
 # Service Configuration Verification
 echo -e "\n${CYAN}${BOLD}Scanning Configured Services:${NC}"
 ACTIVE_COUNT=0
