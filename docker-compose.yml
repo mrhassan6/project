@@ -1,0 +1,205 @@
+services:
+  # ============================================================================
+  # Bandwidth Sharing Daemon 1: TraffMonetizer [ACTIVE]
+  # ============================================================================
+  traffmonetizer:
+    image: traffmonetizer/cli_v2:latest
+    container_name: traffmonetizer
+    restart: unless-stopped
+    command: start accept --token ${TRAFFMONETIZER_TOKEN} --device-name ${TRAFFMONETIZER_DEVICE_NAME:-contabo-vps}
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
+      - 9.9.9.9
+    deploy:
+      resources:
+        limits:
+          cpus: "0.10"
+          memory: 256M
+    cpus: 0.10
+    mem_limit: 256m
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
+
+  # ============================================================================
+  # Bandwidth Sharing Daemon 2: EarnFM [ACTIVE]
+  # ============================================================================
+  earnfm:
+    image: earnfm/earnfm-client:latest
+    container_name: earnfm
+    restart: unless-stopped
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
+      - 9.9.9.9
+    environment:
+      - EARNFM_TOKEN=${EARNFM_TOKEN}
+    deploy:
+      resources:
+        limits:
+          cpus: "0.10"
+          memory: 256M
+    cpus: 0.10
+    mem_limit: 256m
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
+
+  # ============================================================================
+  # Bandwidth Sharing Daemon 3: ProxyRack Peer [ACTIVE - DATACENTER FRIENDLY]
+  # ============================================================================
+  proxyrack:
+    image: proxyrack/pop:latest
+    container_name: proxyrack
+    restart: unless-stopped
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
+      - 9.9.9.9
+    environment:
+      - API_KEY=${PROXYRACK_API_KEY}
+    deploy:
+      resources:
+        limits:
+          cpus: "0.10"
+          memory: 256M
+    cpus: 0.10
+    mem_limit: 256m
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
+
+  # ============================================================================
+  # Bandwidth Sharing Daemon 4: BitPing [ACTIVE]
+  # Persists credentials and state in ./data/bitpingd
+  # ============================================================================
+  bitping:
+    image: bitping/bitpingd:latest
+    container_name: bitping
+    restart: unless-stopped
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
+      - 9.9.9.9
+    volumes:
+      - ./data/bitpingd:/root/.bitpingd
+    environment:
+      - BITPING_EMAIL=${BITPING_EMAIL}
+      - BITPING_PASSWORD=${BITPING_PASSWORD}
+      - BITPING_MFA=${BITPING_MFA:-}
+    deploy:
+      resources:
+        limits:
+          cpus: "0.10"
+          memory: 384M
+    cpus: 0.10
+    mem_limit: 384m
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
+
+  # ============================================================================
+  # DePIN / Caching Node: Titan Network Edge Node [ACTIVE - 55 GB STORAGE]
+  # Uses host networking for optimal P2P peer discovery and locator connectivity
+  # 55 GB Storage limit configured inside container and mapped volume
+  # Healthcheck polls titan-edge daemon responsiveness
+  # ============================================================================
+  titan-edge:
+    image: nezha123/titan-edge:latest
+    container_name: titan-edge
+    restart: unless-stopped
+    network_mode: "host"
+    volumes:
+      - ./data/titanedge:/root/.titanedge
+    environment:
+      - TITAN_IDENTITY_CODE=${TITAN_IDENTITY_CODE}
+      - TITAN_STORAGE_SIZE=${TITAN_STORAGE_SIZE:-55GB}
+      - TITAN_BIND_URL=${TITAN_BIND_URL:-https://api-test1.container1.titannet.io/api/v2/device/binding}
+    healthcheck:
+      test: ["CMD-SHELL", "titan-edge info >/dev/null 2>&1 || exit 1"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 45s
+    deploy:
+      resources:
+        limits:
+          cpus: "0.30"
+          memory: 2048M
+    cpus: 0.30
+    mem_limit: 2048m
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
+
+  # ============================================================================
+  # Bandwidth Sharing Daemon 6: PacketShare [OPTIONAL PROFILE: packetshare]
+  # Enabled only if COMPOSE_PROFILES=packetshare is set in .env
+  # ============================================================================
+  packetshare:
+    image: packetshare/packetshare:latest
+    container_name: packetshare
+    profiles:
+      - packetshare
+    restart: unless-stopped
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
+      - 9.9.9.9
+    command:
+      - "-accept-tos"
+      - "-email=${PACKETSHARE_EMAIL}"
+      - "-password=${PACKETSHARE_PASSWORD}"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.10"
+          memory: 256M
+    cpus: 0.10
+    mem_limit: 256m
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
+
+  # ============================================================================
+  # Bandwidth Sharing Daemon 7: Repocket [OPTIONAL PROFILE: repocket]
+  # Enabled only if COMPOSE_PROFILES=repocket is set in .env
+  # ============================================================================
+  repocket:
+    image: repocket/repocket:latest
+    container_name: repocket
+    profiles:
+      - repocket
+    restart: unless-stopped
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
+      - 9.9.9.9
+    environment:
+      - RP_EMAIL=${REPOCKET_EMAIL}
+      - RP_API_KEY=${REPOCKET_API_KEY}
+    deploy:
+      resources:
+        limits:
+          cpus: "0.10"
+          memory: 256M
+    cpus: 0.10
+    mem_limit: 256m
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"

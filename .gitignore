@@ -1,0 +1,14 @@
+# Sensitive environment variables & secrets (CRITICAL: Never commit to Git)
+.env
+
+# Persistent runtime data
+data/
+*.db
+
+# System and execution logs
+*.log
+/var/log/
+
+# OS specific files
+.DS_Store
+Thumbs.db
